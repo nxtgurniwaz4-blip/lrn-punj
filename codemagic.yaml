@@ -1,0 +1,77 @@
+workflows:
+  android:
+    name: Learn Punjabi Android APK
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: stable
+    scripts:
+      - name: Create platform folders and check app code
+        script: |
+          for z in *.zip; do [ -f "$z" ] && unzip -o "$z"; done || true
+          if [ -f punjabi_learn/lib/main.dart ]; then cp -R punjabi_learn/. .; fi
+          if [ -f main.dart ] && [ ! -f lib/main.dart ]; then mkdir -p lib && cp main.dart lib/main.dart; fi
+          if [ -f lib/main.dart ]; then cp lib/main.dart /tmp/main.dart.bak; fi
+          flutter create --platforms=android,ios --project-name punjabi_learn .
+          if [ -f /tmp/main.dart.bak ]; then cp /tmp/main.dart.bak lib/main.dart; fi
+          rm -rf test
+          if ! grep -q "Learn Punjabi" lib/main.dart; then echo "ERROR: lib/main.dart is missing or is the default counter app. Add the Punjabi app code at lib/main.dart in the repo."; exit 1; fi
+      - name: Get packages
+        script: |
+          flutter pub add flutter_tts shared_preferences
+          flutter pub get
+      - name: Set app name and icon
+        script: |
+          perl -pi -e 's/android:label="[^"]*"/android:label="Learn Punjabi"/' android/app/src/main/AndroidManifest.xml
+          if [ -f assets/icon.png ] && [ -f assets/icon_fg.png ]; then
+            flutter pub add --dev flutter_launcher_icons
+            printf '%s\n' 'flutter_launcher_icons:' '  android: true' '  ios: true' '  image_path: "assets/icon.png"' '  remove_alpha_ios: true' '  adaptive_icon_background: "#C5426C"' '  adaptive_icon_foreground: "assets/icon_fg.png"' > flutter_launcher_icons.yaml
+            dart run flutter_launcher_icons
+          else
+            echo "WARNING: assets/icon.png or assets/icon_fg.png not found, using the default icon."
+          fi
+      - name: Build APK
+        script: flutter build apk --release
+    artifacts:
+      - build/**/outputs/**/*.apk
+  ios:
+    name: Learn Punjabi iOS IPA (unsigned)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: stable
+    scripts:
+      - name: Create platform folders and check app code
+        script: |
+          for z in *.zip; do [ -f "$z" ] && unzip -o "$z"; done || true
+          if [ -f punjabi_learn/lib/main.dart ]; then cp -R punjabi_learn/. .; fi
+          if [ -f main.dart ] && [ ! -f lib/main.dart ]; then mkdir -p lib && cp main.dart lib/main.dart; fi
+          if [ -f lib/main.dart ]; then cp lib/main.dart /tmp/main.dart.bak; fi
+          flutter create --platforms=android,ios --project-name punjabi_learn .
+          if [ -f /tmp/main.dart.bak ]; then cp /tmp/main.dart.bak lib/main.dart; fi
+          rm -rf test
+          if ! grep -q "Learn Punjabi" lib/main.dart; then echo "ERROR: lib/main.dart is missing or is the default counter app. Add the Punjabi app code at lib/main.dart in the repo."; exit 1; fi
+      - name: Get packages
+        script: |
+          flutter pub add flutter_tts shared_preferences
+          flutter pub get
+      - name: Set app name and icon
+        script: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Learn Punjabi" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName Learn Punjabi" ios/Runner/Info.plist
+          if [ -f assets/icon.png ] && [ -f assets/icon_fg.png ]; then
+            flutter pub add --dev flutter_launcher_icons
+            printf '%s\n' 'flutter_launcher_icons:' '  android: true' '  ios: true' '  image_path: "assets/icon.png"' '  remove_alpha_ios: true' '  adaptive_icon_background: "#C5426C"' '  adaptive_icon_foreground: "assets/icon_fg.png"' > flutter_launcher_icons.yaml
+            dart run flutter_launcher_icons
+          else
+            echo "WARNING: assets/icon.png or assets/icon_fg.png not found, using the default icon."
+          fi
+      - name: Build iOS without signing
+        script: flutter build ios --release --no-codesign
+      - name: Package IPA
+        script: |
+          mkdir Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -r punjabi_learn.ipa Payload
+    artifacts:
+      - punjabi_learn.ipa
