@@ -77,8 +77,13 @@ workflows:
         script: flutter build ios --release --no-codesign --dart-define=TTS_KEY=$TTS_KEY
       - name: Package IPA
         script: |
+          rm -rf Payload punjabi_learn.ipa
           mkdir Payload
           cp -R build/ios/iphoneos/Runner.app Payload/
-          zip -r punjabi_learn.ipa Payload
+          plutil -lint Payload/Runner.app/Info.plist
+          ls Payload/Runner.app | head -20
+          ditto -c -k --keepParent Payload punjabi_learn.ipa
+          unzip -l punjabi_learn.ipa | head -12
+          ls -la punjabi_learn.ipa
     artifacts:
       - punjabi_learn.ipa
