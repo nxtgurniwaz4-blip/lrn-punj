@@ -18,11 +18,12 @@ workflows:
           if ! grep -q "Learn Punjabi" lib/main.dart; then echo "ERROR: lib/main.dart is missing or is the default counter app. Add the Punjabi app code at lib/main.dart in the repo."; exit 1; fi
       - name: Get packages
         script: |
-          flutter pub add flutter_tts shared_preferences
+          flutter pub add flutter_tts shared_preferences audioplayers http
           flutter pub get
       - name: Set app name and icon
         script: |
           perl -pi -e 's/android:label="[^"]*"/android:label="Learn Punjabi"/' android/app/src/main/AndroidManifest.xml
+          perl -0pi -e 's|<application|<uses-permission android:name="android.permission.INTERNET"/>\n    <application|' android/app/src/main/AndroidManifest.xml
           if [ -f assets/icon.png ] && [ -f assets/icon_fg.png ]; then
             flutter pub add --dev flutter_launcher_icons
             printf '%s\n' 'flutter_launcher_icons:' '  android: true' '  ios: true' '  image_path: "assets/icon.png"' '  remove_alpha_ios: true' '  adaptive_icon_background: "#C5426C"' '  adaptive_icon_foreground: "assets/icon_fg.png"' > flutter_launcher_icons.yaml
@@ -53,7 +54,7 @@ workflows:
           if ! grep -q "Learn Punjabi" lib/main.dart; then echo "ERROR: lib/main.dart is missing or is the default counter app. Add the Punjabi app code at lib/main.dart in the repo."; exit 1; fi
       - name: Get packages
         script: |
-          flutter pub add flutter_tts shared_preferences
+          flutter pub add flutter_tts shared_preferences audioplayers http
           flutter pub get
       - name: Set app name and icon
         script: |
