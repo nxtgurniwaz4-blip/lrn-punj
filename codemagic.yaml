@@ -10,6 +10,9 @@ workflows:
         script: |
           for z in *.zip; do [ -f "$z" ] && unzip -o "$z"; done || true
           if [ -f punjabi_learn/lib/main.dart ]; then cp -R punjabi_learn/. .; fi
+          mkdir -p assets/audio
+          for f in *.m4a *.mp3 *.wav *.aac; do [ -f "$f" ] && mv "$f" assets/audio/; done || true
+          for d in recordings Recordings; do [ -d "$d" ] && find "$d" -type f \( -iname '*.m4a' -o -iname '*.mp3' -o -iname '*.wav' -o -iname '*.aac' \) -exec cp {} assets/audio/ \; ; done || true
           if [ -f main.dart ] && [ ! -f lib/main.dart ]; then mkdir -p lib && cp main.dart lib/main.dart; fi
           if [ -f lib/main.dart ]; then cp lib/main.dart /tmp/main.dart.bak; fi
           flutter create --platforms=android,ios --project-name punjabi_learn .
@@ -32,7 +35,7 @@ workflows:
             echo "WARNING: assets/icon.png or assets/icon_fg.png not found, using the default icon."
           fi
       - name: Build APK
-        script: flutter build apk --release
+        script: flutter build apk --release --dart-define=TTS_KEY=$TTS_KEY
     artifacts:
       - build/**/outputs/**/*.apk
   ios:
@@ -46,6 +49,9 @@ workflows:
         script: |
           for z in *.zip; do [ -f "$z" ] && unzip -o "$z"; done || true
           if [ -f punjabi_learn/lib/main.dart ]; then cp -R punjabi_learn/. .; fi
+          mkdir -p assets/audio
+          for f in *.m4a *.mp3 *.wav *.aac; do [ -f "$f" ] && mv "$f" assets/audio/; done || true
+          for d in recordings Recordings; do [ -d "$d" ] && find "$d" -type f \( -iname '*.m4a' -o -iname '*.mp3' -o -iname '*.wav' -o -iname '*.aac' \) -exec cp {} assets/audio/ \; ; done || true
           if [ -f main.dart ] && [ ! -f lib/main.dart ]; then mkdir -p lib && cp main.dart lib/main.dart; fi
           if [ -f lib/main.dart ]; then cp lib/main.dart /tmp/main.dart.bak; fi
           flutter create --platforms=android,ios --project-name punjabi_learn .
@@ -68,7 +74,7 @@ workflows:
             echo "WARNING: assets/icon.png or assets/icon_fg.png not found, using the default icon."
           fi
       - name: Build iOS without signing
-        script: flutter build ios --release --no-codesign
+        script: flutter build ios --release --no-codesign --dart-define=TTS_KEY=$TTS_KEY
       - name: Package IPA
         script: |
           mkdir Payload
