@@ -1,34 +1,55 @@
 workflows:
   android:
-    name: Punjabi Android APK
+    name: Learn Punjabi Android APK
     instance_type: mac_mini_m2
     max_build_duration: 30
     environment:
       flutter: stable
     scripts:
-      - name: Create platform folders
+      - name: Create platform folders and check app code
         script: |
+          for z in *.zip; do [ -f "$z" ] && unzip -o "$z"; done || true
+          if [ -f punjabi_learn/lib/main.dart ]; then cp -R punjabi_learn/. .; fi
+          if [ -f main.dart ] && [ ! -f lib/main.dart ]; then mkdir -p lib && cp main.dart lib/main.dart; fi
+          if [ -f lib/main.dart ]; then cp lib/main.dart /tmp/main.dart.bak; fi
           flutter create --platforms=android,ios --project-name punjabi_learn .
+          if [ -f /tmp/main.dart.bak ]; then cp /tmp/main.dart.bak lib/main.dart; fi
           rm -rf test
+          if ! grep -q "Learn Punjabi" lib/main.dart; then echo "ERROR: lib/main.dart is missing or is the default counter app. Add the Punjabi app code at lib/main.dart in the repo."; exit 1; fi
       - name: Get packages
         script: flutter pub get
+      - name: Set app name and icon
+        script: |
+          perl -pi -e 's/android:label="[^"]*"/android:label="Learn Punjabi"/' android/app/src/main/AndroidManifest.xml
+          dart run flutter_launcher_icons
       - name: Build APK
         script: flutter build apk --release
     artifacts:
       - build/**/outputs/**/*.apk
   ios:
-    name: Punjabi iOS IPA (unsigned)
+    name: Learn Punjabi iOS IPA (unsigned)
     instance_type: mac_mini_m2
     max_build_duration: 30
     environment:
       flutter: stable
     scripts:
-      - name: Create platform folders
+      - name: Create platform folders and check app code
         script: |
+          for z in *.zip; do [ -f "$z" ] && unzip -o "$z"; done || true
+          if [ -f punjabi_learn/lib/main.dart ]; then cp -R punjabi_learn/. .; fi
+          if [ -f main.dart ] && [ ! -f lib/main.dart ]; then mkdir -p lib && cp main.dart lib/main.dart; fi
+          if [ -f lib/main.dart ]; then cp lib/main.dart /tmp/main.dart.bak; fi
           flutter create --platforms=android,ios --project-name punjabi_learn .
+          if [ -f /tmp/main.dart.bak ]; then cp /tmp/main.dart.bak lib/main.dart; fi
           rm -rf test
+          if ! grep -q "Learn Punjabi" lib/main.dart; then echo "ERROR: lib/main.dart is missing or is the default counter app. Add the Punjabi app code at lib/main.dart in the repo."; exit 1; fi
       - name: Get packages
         script: flutter pub get
+      - name: Set app name and icon
+        script: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Learn Punjabi" ios/Runner/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName Learn Punjabi" ios/Runner/Info.plist
+          dart run flutter_launcher_icons
       - name: Build iOS without signing
         script: flutter build ios --release --no-codesign
       - name: Package IPA
